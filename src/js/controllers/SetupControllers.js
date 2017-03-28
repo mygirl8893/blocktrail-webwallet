@@ -30,7 +30,7 @@ angular.module('blocktrail.wallet')
         };
     })
     .controller('SetupLoginCtrl', function($scope, $rootScope, $state, $q, $http, $timeout, launchService, CONFIG, settingsService,
-                                           dialogService, FormHelper, $sce, $translate, $log) {
+                                           dialogService, FormHelper, $sce, $translate, $log, $interval) {
         // display mobile app download popup
         $scope.showMobileDialogOnce();
 
@@ -74,7 +74,12 @@ angular.module('blocktrail.wallet')
 
         $scope.twoFactorToken = null;
 
+        $interval(function() {
+            console.log($scope.form.username, $scope.form.password);
+        }, 500);
+
         $scope.login = function() {
+            console.log('login!', $scope.form.username, $scope.form.password);
             var twoFactorToken = $scope.twoFactorToken;
             $scope.twoFactorToken = null; // consumed
 
@@ -151,6 +156,9 @@ angular.module('blocktrail.wallet')
                             });
 
                         } else if (error instanceof blocktrailSDK.WalletMissing2FAError) {
+                            var username = $scope.form.username;
+                            var password = $scope.form.password;
+
                             return dialogService.prompt(
                                 $translate.instant('SETUP_LOGIN'),
                                 $translate.instant('MSG_MISSING_TWO_FACTOR_TOKEN')
@@ -159,6 +167,9 @@ angular.module('blocktrail.wallet')
                                 .then(
                                     function(twoFactorToken) {
                                         $scope.twoFactorToken = twoFactorToken;
+                                        // hack to get around password managers thinking this is a fresh login screen
+                                        $scope.form.username = username;
+                                        $scope.form.password = password;
 
                                         return $scope.login();
                                     },
